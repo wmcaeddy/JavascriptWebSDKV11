@@ -1,3 +1,76 @@
+# Flutter IDV - Identity Verification App
+
+**Bundle ID**: `com.magi-3.idvflutter`  
+**App Name**: Flutter IDV
+
+Flutter IDV is a comprehensive identity verification application that integrates the Acuant JavaScript Web SDK with IdCloud KYC API for secure document verification.
+
+## Features
+
+- **Document Capture**: Live camera capture of identity documents with automatic detection and quality analysis
+- **Face Verification**: Passive liveness detection and face matching
+- **IdCloud KYC Integration**: Real API transactions with JWT and X-API-KEY authentication
+- **Secure Configuration**: Encrypted storage of sensitive credentials
+- **Cross-Platform**: Supports both Android and iOS with proper bundle identifiers
+
+## Prerequisites
+
+- Flutter SDK (3.0.0 or higher)
+- Dart SDK (3.0.0 or higher)
+- Android Studio / Xcode for platform-specific builds
+- Valid Acuant SDK credentials
+- Valid IdCloud KYC API credentials (JWT token and X-API-KEY)
+
+## Quick Setup
+
+### 1. Clone and Setup
+
+```bash
+git clone <your-repository>
+cd flutter_idv
+flutter pub get
+```
+
+### 2. Configure Credentials
+
+⚠️ **SECURITY NOTICE**: See [SECURITY.md](SECURITY.md) for detailed security guidelines.
+
+Copy and edit the configuration file:
+```bash
+cp config.example.json config.json
+```
+
+Update `config.json` with your actual credentials (NOT the example file):
+```json
+{
+  "api_config": {
+    "base_url": "https://scs-ol-demo.rnd.gemaltodigitalbankingidcloud.com/scs/v1",
+    "x_api_key": "YOUR_ACTUAL_X_API_KEY",
+    "jwt_token": "YOUR_ACTUAL_JWT_TOKEN"
+  },
+  "acuant_config": {
+    "passive_username": "YOUR_ACUANT_PASSIVE_USERNAME",
+    "passive_password": "YOUR_ACUANT_PASSIVE_PASSWORD",
+    "id_username": "YOUR_ACUANT_ID_USERNAME", 
+    "id_password": "YOUR_ACUANT_ID_PASSWORD",
+    "passive_subscription_id": "YOUR_ACUANT_SUBSCRIPTION_ID",
+    "frm_endpoint": "https://frm.acuant.net",
+    "acas_endpoint": "https://acas.acuant.net",
+    "liveness_endpoint": "https://us.passlive.acuant.net"
+  }
+}
+```
+
+### 3. Build and Run
+
+```bash
+flutter run  # For debug
+flutter build apk --release  # Android release
+flutter build ios --release  # iOS release
+```
+
+---
+
 # Acuant JavaScript Web SDK v11.9.3
 
 **February 2024**
@@ -238,7 +311,7 @@ The camera preview by default will fill the width of the screen preserving a 4:3
 **Prerequisite**: Initialize the SDK (see [Initialize and Start the SDK](#initialize-and-start-the-sdk))
 
 - This code is used for live capture; live detection, frame analysis, and auto capture of documents. After capture, it also processes the image.
-- AcuantCameraUI is the default implementation of the UI and uses AcuantCamera to access the device’s native camera via WebRTC.
+- AcuantCameraUI is the default implementation of the UI and uses AcuantCamera to access the device's native camera via WebRTC.
 
 ### Start Live Capture
 
@@ -813,7 +886,7 @@ See the single worker model in [Initialize and Start the SDK](#initialize-and-st
     
 1. iOS 15 has multiple issues that manifest themselves as GPU Highwater failures (ie system daemon used too much memory).
 
-    The reduced resolution of the camera in the latest version of the SDK has mitigated the issue. Unfortunately, because this is an iOS issue, we can’t provide a better solution other than reducing the capture resolution. This issue was fixed in iOS 16.
+    The reduced resolution of the camera in the latest version of the SDK has mitigated the issue. Unfortunately, because this is an iOS issue, we can't provide a better solution other than reducing the capture resolution. This issue was fixed in iOS 16.
 
 1. The camera preview has a low/throttled frame rate (as low as 10-15fps).
 
@@ -921,5 +994,243 @@ information regarding such designations and their registration status.
 For technical support, go to: [https://support.acuant.com](https://support.acuant.com)
 
 **Acuant Inc. 6080 Center Drive, Suite 850, Los Angeles, CA 90045**
+
+----------------------------------------------------------
+
+# Acuant WebView Flutter Application
+
+A Flutter application that integrates the Acuant JavaScript Web SDK with Gemalto API for identity verification. This app provides document capture, face verification, and liveness detection capabilities.
+
+## Features
+
+- **Document Capture**: Live camera capture of identity documents with automatic detection and quality analysis
+- **Face Verification**: Passive liveness detection and face matching
+- **Gemalto Integration**: Real API transactions with JWT and X-API-KEY authentication
+- **Secure Configuration**: Encrypted storage of sensitive credentials
+- **Cross-Platform**: Supports both Android and iOS
+
+## Prerequisites
+
+- Flutter SDK (3.0.0 or higher)
+- Dart SDK (3.0.0 or higher)
+- Android Studio / Xcode for platform-specific builds
+- Valid Acuant SDK credentials
+- Valid Gemalto API credentials (JWT token and X-API-KEY)
+
+## Setup Instructions
+
+### 1. Clone and Setup Flutter Project
+
+```bash
+git clone <your-repository>
+cd acuant_webview_app
+flutter pub get
+```
+
+### 2. Configure Credentials
+
+**IMPORTANT**: Never commit your actual credentials to version control.
+
+1. Copy the example configuration file:
+```bash
+cp config.example.json config.json
+```
+
+2. Edit `config.json` with your actual credentials:
+```json
+{
+  "api_config": {
+    "base_url": "https://scs-ol-demo.rnd.gemaltodigitalbankingidcloud.com/scs/v1",
+    "x_api_key": "YOUR_ACTUAL_X_API_KEY",
+    "jwt_token": "YOUR_ACTUAL_JWT_TOKEN"
+  },
+  "acuant_config": {
+    "passive_username": "YOUR_ACUANT_PASSIVE_USERNAME",
+    "passive_password": "YOUR_ACUANT_PASSIVE_PASSWORD",
+    "id_username": "YOUR_ACUANT_ID_USERNAME", 
+    "id_password": "YOUR_ACUANT_ID_PASSWORD",
+    "passive_subscription_id": "YOUR_ACUANT_SUBSCRIPTION_ID",
+    "frm_endpoint": "https://frm.acuant.net",
+    "acas_endpoint": "https://acas.acuant.net",
+    "liveness_endpoint": "https://us.passlive.acuant.net"
+  }
+}
+```
+
+### 3. Android Setup
+
+The Android configuration is already included in the project:
+
+- **Permissions**: Camera, microphone, and internet permissions are configured in `AndroidManifest.xml`
+- **WebView**: Supports modern WebView features required by Acuant SDK
+
+### 4. iOS Setup
+
+The iOS configuration is already included in the project:
+
+- **Permissions**: Camera and microphone usage descriptions are configured in `Info.plist`
+- **WebView**: Supports inline media playback for face detection
+
+### 5. Build and Run
+
+```bash
+# For Android
+flutter run
+
+# For iOS
+flutter run --target ios
+
+# For release builds
+flutter build apk --release  # Android
+flutter build ios --release  # iOS
+```
+
+## Application Architecture
+
+### Core Components
+
+1. **ConfigService**: Securely manages API credentials and configuration
+2. **ApiService**: Handles all HTTP requests to Gemalto API with proper authentication
+3. **WebViewScreen**: Main interface integrating Acuant SDK with Flutter
+4. **HTML Interface**: Modified Acuant SDK implementation with Gemalto integration
+
+### Data Flow
+
+1. **Initialization**: App loads configuration and initializes Acuant SDK
+2. **Verification Start**: Calls Gemalto API to start verification scenario
+3. **Document Capture**: Uses Acuant SDK to capture and process documents
+4. **Face Verification**: Performs passive liveness detection
+5. **Data Submission**: Sends captured data to Gemalto API for verification
+6. **Transaction Completion**: Finalizes the verification process
+
+## API Integration
+
+The application makes real HTTP requests to the IdCloud KYC API endpoints following the exact documentation:
+
+**Step 1: Initiate Document Verification**
+- `POST /scs/v1/scenarios` - Initiate document verification with front image
+
+**Step 2: Send Additional Images** 
+- `PATCH /scs/v1/scenarios/{scenario_id}/state/steps/{image_type}` - Send additional document images (back, IR, UV)
+
+**Step 3: Get Verification Results**
+- `PATCH /scs/v1/scenarios/{scenario_id}/state/steps/verifyResults` - Trigger verification results retrieval
+- `GET /scs/v1/scenarios/{scenario_id}` - Get scenario status and results
+
+All requests include proper authentication headers:
+- `Authorization: Bearer {JWT_TOKEN}`
+- `X-API-KEY: {X_API_KEY}`
+
+## Security Features
+
+- **Secure Storage**: Credentials are encrypted using Flutter Secure Storage
+- **No Hardcoded Secrets**: All sensitive data loaded from external configuration
+- **HTTPS Only**: All API communications use HTTPS
+- **Permission Management**: Proper camera and microphone permission handling
+
+## Workflow
+
+1. **Permission Setup** → Application requests camera/microphone permissions
+2. **Configuration Loading** → Secure credentials loaded from encrypted storage
+3. **Acuant SDK Initialization** → WebView loads with Acuant JavaScript SDK
+4. **Document Capture** → User captures ID document using Acuant Camera SDK
+5. **Initiate Verification** → Front document image sent to IdCloud KYC API (`POST /scenarios`)
+6. **Additional Images** → Back/IR/UV images sent if needed (`PATCH /scenarios/{id}/state/steps/{type}`)
+7. **Face Verification** → User performs liveness detection using Acuant PassiveLiveness
+8. **Get Results** → Verification results retrieved (`PATCH /scenarios/{id}/state/steps/verifyResults`)
+9. **Status Monitoring** → Real-time scenario status checks (`GET /scenarios/{id}`)
+10. **Completion** → Complete document verification workflow
+
+## Usage Flow
+
+1. **Launch App**: Grant camera and microphone permissions
+2. **Start Verification**: App initializes and becomes ready for document capture
+3. **Capture Document**: Use "Capture Document" to take photos of ID documents (automatically initiates verification)
+4. **Face Verification**: Use "Face Verification" for liveness detection
+5. **Get Results**: Tap "Get Verification Results" to retrieve verification data from IdCloud
+6. **Check Status**: Monitor verification progress with scenario status
+7. **Complete**: Finalize the document verification process
+
+## Troubleshooting
+
+### Configuration Issues
+- Ensure `config.json` exists and contains valid credentials
+- Check that JWT token is not expired
+- Verify X-API-KEY is correct
+
+### Camera Issues
+- Grant camera permissions in device settings
+- Ensure device has a working camera
+- Try manual capture if live capture fails
+
+### API Issues
+- Check internet connectivity
+- Verify Gemalto API endpoint is accessible
+- Check API credentials are valid
+- Review logs for specific error messages
+
+### WebView Issues
+- Ensure WebView is updated on Android devices
+- Clear app data if WebView appears corrupted
+- Check console logs in debug mode
+
+## Development Notes
+
+### Adding New API Endpoints
+
+1. Add method to `ApiService`
+2. Add case in `WebViewScreen._handleApiCall()`
+3. Update HTML JavaScript to call new endpoint
+
+### Modifying UI
+
+- Main UI is in the HTML file at `assets/web/index.html`
+- Flutter UI is in `lib/screens/webview_screen.dart`
+- Styling can be modified in the HTML CSS section
+
+### Configuration Changes
+
+- Update models in `lib/models/config_model.dart`
+- Modify `ConfigService` to handle new configuration options
+- Update example configuration file
+
+## File Structure
+
+```
+lib/
+├── models/
+│   └── config_model.dart          # Configuration data models
+├── services/
+│   ├── config_service.dart        # Configuration management
+│   └── api_service.dart          # Gemalto API integration
+├── screens/
+│   └── webview_screen.dart       # Main WebView interface
+└── main.dart                     # Application entry point
+
+assets/
+└── web/
+    ├── index.html                # Modified Acuant SDK interface
+    └── webSdk/                   # Acuant SDK files
+
+android/
+└── app/src/main/
+    ├── AndroidManifest.xml       # Android permissions
+    └── kotlin/.../MainActivity.kt # Android activity
+
+ios/
+└── Runner/
+    └── Info.plist               # iOS permissions and config
+```
+
+## Support
+
+For issues related to:
+- **Acuant SDK**: Refer to [Acuant documentation](https://github.com/Acuant/JavascriptWebSDKV11)
+- **Gemalto API**: Contact your Gemalto representative
+- **Flutter WebView**: Check [webview_flutter documentation](https://pub.dev/packages/webview_flutter)
+
+## License
+
+This project is subject to your organization's licensing terms. Ensure compliance with Acuant's EULA and Gemalto's terms of service.
 
 ----------------------------------------------------------

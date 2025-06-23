@@ -1,0 +1,17 @@
+{
+  "api_config": {
+    "base_url": "https://scs-ol-demo.rnd.gemaltodigitalbankingidcloud.com/scs/v1",
+    "x_api_key": "YOUR_X_API_KEY_HERE",
+    "jwt_token": "YOUR_JWT_TOKEN_HERE"
+  },
+  "acuant_config": {
+    "passive_username": "YOUR_ACUANT_PASSIVE_USERNAME",
+    "passive_password": "YOUR_ACUANT_PASSIVE_PASSWORD",
+    "id_username": "YOUR_ACUANT_ID_USERNAME", 
+    "id_password": "YOUR_ACUANT_ID_PASSWORD",
+    "passive_subscription_id": "YOUR_ACUANT_SUBSCRIPTION_ID",
+    "frm_endpoint": "https://frm.acuant.net",
+    "acas_endpoint": "https://acas.acuant.net",
+    "liveness_endpoint": "https://us.passlive.acuant.net"
+  }
+} 

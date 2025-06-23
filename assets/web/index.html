@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Acuant SDK with Gemalto Integration</title>
+  
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+  <style>
+    .loader {
+      border: 5vw solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 5vw solid #3498db;
+      width: 20vw;
+      height: 20vw;
+      -webkit-animation: spin 2s linear infinite;
+      animation: spin 2s linear infinite;
+    }
+
+    @-webkit-keyframes spin {
+      0% { -webkit-transform: rotate(0deg); }
+      100% { -webkit-transform: rotate(360deg); }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      padding-top: 100px;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+    }
+
+    .close {
+      color: #aaaaaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: #000;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .detection-state {
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      z-index: 100;
+      font-size: x-large;
+      margin-top: 50;
+    }
+
+    .face-camera-container {
+      display: none;
+      width: 100%;
+      height: 100%;
+    }
+
+    .fit-screen {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .status-display {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 0.25rem;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container-fluid">
+    <h2 class="text-center mt-3">Identity Verification</h2>
+    
+    <!-- Status Display -->
+    <div id="status-display" class="status-display">
+      <h5>Status: <span id="current-status">Initializing...</span></h5>
+      <div id="transaction-info" style="display: none;">
+        <strong>Transaction ID:</strong> <span id="transaction-id"></span><br>
+        <strong>Scenario:</strong> <span id="scenario-name"></span>
+      </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="acuant-loader" class="row text-center" style="display:none;">
+      <div class="col-md-12">
+        <div class="loader" style="margin: 20% auto 0 auto"></div>
+        <p class="mt-3">Processing...</p>
+      </div>
+    </div>
+
+    <!-- Main Controls -->
+    <div id="main-controls" class="row text-center" style="display:none; margin:5% 0">
+      <div class="col-md-12">
+        <button class="btn btn-primary btn-lg mr-3" onClick="startVerificationProcess()">Start Verification</button>
+        <button class="btn btn-info btn-lg mr-3" onClick="openCamera()">Capture Document</button>
+        <button class="btn btn-success btn-lg mr-3" onClick="openFaceCaptureCamera()">Face Verification</button>
+      </div>
+    </div>
+
+    <!-- Camera Container -->
+    <div id="acuant-camera"></div>
+
+    <!-- Face Capture Container -->
+    <div id="acuant-face-capture-container" class="face-camera-container">
+      <div id="face-detection-text" class="detection-state"></div>
+    </div>
+
+    <!-- Results Display -->
+    <div id="result-display" style="display:none">
+      <div class="row">
+        <div class="col-md-6">
+          <h4>Document Result</h4>
+          <div id="result-id" style="display:none">
+            <img id="result-id-img" class="fit-screen" style="display:block">
+            <div class="row mt-2">
+              <div class="col-md-6">
+                <label>Sharpness:</label>
+                <input id="sharpness" class="form-control" readonly />
+              </div>
+              <div class="col-md-6">
+                <label>Glare:</label>
+                <input id="glare" class="form-control" readonly />
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col-md-6">
+                <label>DPI:</label>
+                <input id="dpi" class="form-control" readonly />
+              </div>
+              <div class="col-md-6">
+                <label>Barcode:</label>
+                <input id="barcode" class="form-control" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <h4>Biometric Result</h4>
+          <div id="result-face" style="display:none">
+            <div class="row mt-2">
+              <div class="col-md-6">
+                <label>Liveness Score:</label>
+                <input id="face-score" class="form-control" readonly />
+              </div>
+              <div class="col-md-6">
+                <label>Result:</label>
+                <input id="face-result" class="form-control" readonly />
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col-md-12">
+                <label>Transaction ID:</label>
+                <input id="face-transaction" class="form-control" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mt-3">
+        <div class="col-md-12 text-center">
+          <button class="btn btn-success btn-lg mr-3" onClick="submitToIdCloud()">Get Verification Results</button>
+          <button class="btn btn-warning btn-lg mr-3" onClick="checkStatus()">Check Status</button>
+          <button class="btn btn-primary btn-lg" onClick="completeVerification()">Complete Verification</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="acuant-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div class="row" style="margin:3%">
+          <h3 id="acuant-modal-text"></h3>
+        </div>
+        <div class="row text-right" style="margin:3%">
+          <button class="btn btn-warning mr-2" onClick="startManualCapture()">Manual Capture</button>
+          <button class="btn btn-secondary" onClick="closeModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let appConfig = null;
+    let currentTransaction = null;
+    let documentData = null;
+    let biometricData = null;
+    let liveCaptureFailed = false;
+
+    // Flutter communication bridge
+    function sendMessageToFlutter(type, data) {
+      if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+        window.flutter_inappwebview.callHandler('messageHandler', {
+          type: type,
+          data: data,
+          timestamp: new Date().toISOString()
+        });
+      } else if (window.postMessage) {
+        window.postMessage({
+          type: type,
+          data: data,
+          timestamp: new Date().toISOString()
+        }, '*');
+      }
+    }
+
+    // Receive configuration from Flutter
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'config') {
+        appConfig = event.data.config;
+        console.log('Configuration received from Flutter');
+        initializeAcuantSdk();
+      }
+    });
+
+    // Status update function
+    function updateStatus(status, transactionId = null, scenarioName = null) {
+      document.getElementById('current-status').textContent = status;
+      
+      if (transactionId || scenarioName) {
+        document.getElementById('transaction-info').style.display = 'block';
+        if (transactionId) document.getElementById('transaction-id').textContent = transactionId;
+        if (scenarioName) document.getElementById('scenario-name').textContent = scenarioName;
+      }
+      
+      sendMessageToFlutter('status_update', {
+        status: status,
+        transaction_id: transactionId,
+        scenario_name: scenarioName
+      });
+    }
+
+    // Initialize when Acuant SDK is loaded
+    function onAcuantSdkLoaded() {
+      AcuantJavascriptWebSdk.setUnexpectedErrorCallback(unexpectedError);
+      updateStatus('SDK Loaded - Waiting for configuration...');
+      
+      // Request configuration from Flutter
+      sendMessageToFlutter('request_config', {});
+    }
+
+    function initializeAcuantSdk() {
+      if (!appConfig) {
+        console.error('No configuration available');
+        return;
+      }
+
+      updateStatus('Initializing Acuant SDK...');
+      
+      let base64Token = btoa(appConfig.acuant_config.id_username + ':' + appConfig.acuant_config.id_password);
+      
+      AcuantJavascriptWebSdk.initialize(base64Token, appConfig.acuant_config.acas_endpoint, {
+        onSuccess: function () {
+          console.log('Acuant SDK initialized successfully');
+          if (!isOldiOS()) {
+            AcuantJavascriptWebSdk.start(initDone);
+          } else {
+            AcuantJavascriptWebSdk.start(initDone, true);
+          }
+        },
+        onFail: function (code, description) {
+          console.error("Acuant initialization failed", code, description);
+          updateStatus('SDK Initialization Failed');
+          sendMessageToFlutter('error', {
+            type: 'sdk_init_failed',
+            code: code,
+            description: description
+          });
+        }
+      });
+    }
+
+    function initDone() {
+      updateStatus('Ready for verification');
+      document.getElementById('main-controls').style.display = 'block';
+      console.log("Acuant SDK initialization completed");
+    }
+
+    // Start verification process with IdCloud KYC
+    async function startVerificationProcess() {
+      try {
+        updateStatus('Ready for document capture...');
+        sendMessageToFlutter('verification_ready', {
+          status: 'ready_for_document_capture'
+        });
+      } catch (error) {
+        console.error('Failed to start verification:', error);
+        updateStatus('Failed to start verification');
+        sendMessageToFlutter('error', {
+          type: 'verification_start_failed',
+          error: error.message
+        });
+      }
+    }
+
+    // Document capture functions
+    function openCamera() {
+      document.getElementById('main-controls').style.display = 'none';
+      document.getElementById('result-display').style.display = 'none';
+      
+      updateStatus('Capturing document...');
+      startCamera();
+    }
+
+    const cameraOptions = {
+      text: {
+        NONE: "ALIGN",
+        SMALL_DOCUMENT: "MOVE CLOSER",
+        GOOD_DOCUMENT: null,
+        BIG_DOCUMENT: "TOO CLOSE",
+        CAPTURING: "CAPTURING",
+        TAP_TO_CAPTURE: "TAP TO CAPTURE"
+      }
+    };
+
+    const cameraCallback = {
+      onCaptured: onDocumentCaptured,
+      onCropped: onDocumentCropped,
+      onFrameAvailable: (response) => {
+        // Frame processing if needed
+      },
+      onError: onCameraError
+    };
+
+    function startCamera() {
+      if (AcuantCamera.isCameraSupported && !liveCaptureFailed) {
+        document.getElementById('acuant-camera').style.display = 'block';
+        AcuantCameraUI.start(cameraCallback, cameraOptions);
+      } else {
+        startManualCapture();
+      }
+    }
+
+    function onDocumentCaptured(response) {
+      document.getElementById('acuant-loader').style.display = 'block';
+      updateStatus('Processing document...');
+    }
+
+    async function onDocumentCropped(response) {
+      document.getElementById('acuant-loader').style.display = 'none';
+      document.getElementById('acuant-camera').style.display = 'none';
+      
+      if (response && response.image) {
+        documentData = response;
+        displayDocumentResult(response);
+        updateStatus('Document captured - Initiating verification...');
+        
+        try {
+          // Step 1: Initiate document verification with front image
+          const frontImageBase64 = response.image.data.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+          const verificationResult = await callFlutterApi('submit_front_document', {
+            front_image: frontImageBase64,
+            document_type: 'Passport', // Can be made configurable
+            document_size: 'TD1'
+          });
+          
+          if (verificationResult && verificationResult.id) {
+            currentTransaction = verificationResult.id;
+            updateStatus('Document verification initiated', currentTransaction, 'Connect_Verify_Document');
+            
+            sendMessageToFlutter('document_captured', {
+              scenario_id: currentTransaction,
+              image_data: response.image.data,
+              sharpness: response.sharpness,
+              glare: response.glare,
+              dpi: response.dpi,
+              barcode: response.image.barcodeText,
+              verification_result: verificationResult
+            });
+          }
+        } catch (error) {
+          console.error('Failed to initiate document verification:', error);
+          updateStatus('Document verification failed');
+          sendMessageToFlutter('error', {
+            type: 'document_verification_failed',
+            error: error.message
+          });
+        }
+      } else {
+        updateStatus('Document capture failed');
+        sendMessageToFlutter('error', {
+          type: 'document_capture_failed',
+          error: 'No image data received'
+        });
+      }
+      
+      document.getElementById('main-controls').style.display = 'block';
+      document.getElementById('result-display').style.display = 'block';
+    }
+
+    function displayDocumentResult(result) {
+      const resultImg = document.getElementById('result-id-img');
+      const resultDiv = document.getElementById('result-id');
+      
+      resultImg.src = result.image.data;
+      resultDiv.style.display = 'block';
+      
+      document.getElementById('sharpness').value = result.sharpness;
+      document.getElementById('glare').value = result.glare;
+      document.getElementById('dpi').value = result.dpi;
+      document.getElementById('barcode').value = result.image.barcodeText || '';
+    }
+
+    // Face capture functions
+    function openFaceCaptureCamera() {
+      document.getElementById('main-controls').style.display = 'none';
+      document.getElementById('result-display').style.display = 'none';
+      document.getElementById('acuant-face-capture-container').style.display = 'block';
+      
+      updateStatus('Capturing face for liveness verification...');
+      
+      const faceDetectionTextDiv = document.getElementById('face-detection-text');
+      faceDetectionTextDiv.innerHTML = "LOADING DETECTOR";
+
+      const onFaceCaptured = (image) => {
+        document.getElementById('acuant-loader').style.display = 'block';
+        document.getElementById('acuant-face-capture-container').style.display = 'none';
+        
+        const credentials = btoa(appConfig.acuant_config.passive_username + ':' + appConfig.acuant_config.passive_password);
+        
+        AcuantPassiveLiveness.getLiveness({
+          endpoint: appConfig.acuant_config.liveness_endpoint,
+          token: credentials,
+          image: image,
+          subscriptionId: appConfig.acuant_config.passive_subscription_id
+        }, (result) => {
+          document.getElementById('acuant-loader').style.display = 'none';
+          
+          if (result) {
+            biometricData = result;
+            displayBiometricResult(result);
+            updateStatus('Face verification completed');
+            
+            sendMessageToFlutter('biometric_captured', {
+              scenario_id: currentTransaction,
+              image_data: image,
+              liveness_result: result
+            });
+          } else {
+            updateStatus('Face verification failed');
+            sendMessageToFlutter('error', {
+              type: 'biometric_capture_failed',
+              error: 'No liveness result received'
+            });
+          }
+          
+          document.getElementById('main-controls').style.display = 'block';
+          document.getElementById('result-display').style.display = 'block';
+        });
+      };
+
+      const faceHandler = {
+        onDetectorInitialized: () => {
+          faceDetectionTextDiv.innerHTML = "";
+        },
+        onDetection: (text) => {
+          faceDetectionTextDiv.innerHTML = text;
+        },
+        onOpened: () => {
+          faceDetectionTextDiv.style.display = 'flex';
+        },
+        onClosed: () => {
+          document.getElementById('acuant-face-capture-container').style.display = 'none';
+          faceDetectionTextDiv.style.display = 'none';
+          document.getElementById('main-controls').style.display = 'block';
+        },
+        onError: (error) => {
+          if (error.code == 1) {
+            faceDetectionTextDiv.style.display = 'none';
+            document.getElementById('main-controls').style.display = 'block';
+          }
+          console.error('Face capture error:', error.message);
+          sendMessageToFlutter('error', {
+            type: 'face_capture_error',
+            error: error.message,
+            code: error.code
+          });
+        },
+        onPhotoTaken: () => {
+          faceDetectionTextDiv.style.display = 'none';
+        },
+        onPhotoRetake: () => {
+          faceDetectionTextDiv.style.display = 'flex';
+        },
+        onCaptured: onFaceCaptured
+      };
+
+      const faceDetectionState = {
+        FACE_NOT_FOUND: "FACE NOT FOUND",
+        TOO_MANY_FACES: "TOO MANY FACES",
+        FACE_ANGLE_TOO_LARGE: "FACE ANGLE TOO LARGE",
+        PROBABILITY_TOO_SMALL: "PROBABILITY TOO SMALL",
+        FACE_TOO_SMALL: "FACE TOO SMALL",
+        FACE_CLOSE_TO_BORDER: "TOO CLOSE TO THE FRAME"
+      };
+
+      AcuantPassiveLiveness.start(faceHandler, faceDetectionState);
+    }
+
+    function displayBiometricResult(result) {
+      const resultDiv = document.getElementById('result-face');
+      resultDiv.style.display = 'block';
+      
+      if (result.LivenessResult) {
+        document.getElementById('face-score').value = result.LivenessResult.Score || '';
+        document.getElementById('face-result').value = result.LivenessResult.LivenessAssessment || '';
+      }
+      document.getElementById('face-transaction').value = result.TransactionId || '';
+    }
+
+    // IdCloud KYC API integration functions
+    async function submitToIdCloud() {
+      if (!currentTransaction) {
+        alert('No active scenario');
+        return;
+      }
+
+      try {
+        updateStatus('Getting verification results from IdCloud...');
+        
+        // Step 3: Get verification results
+        const verificationResults = await callFlutterApi('get_verification_results', {
+          scenario_id: currentTransaction
+        });
+        
+        updateStatus('Verification results retrieved successfully');
+        sendMessageToFlutter('idcloud_verification_complete', {
+          scenario_id: currentTransaction,
+          verification_results: verificationResults
+        });
+        
+      } catch (error) {
+        console.error('Failed to get verification results:', error);
+        updateStatus('Failed to get verification results');
+        sendMessageToFlutter('error', {
+          type: 'verification_results_failed',
+          error: error.message
+        });
+      }
+    }
+
+    async function checkStatus() {
+      if (!currentTransaction) {
+        alert('No active scenario');
+        return;
+      }
+
+      try {
+        updateStatus('Checking scenario status...');
+        
+        const statusResult = await callFlutterApi('get_scenario_status', {
+          scenario_id: currentTransaction
+        });
+        
+        updateStatus(`Scenario status: ${statusResult.status || 'Unknown'}`);
+        sendMessageToFlutter('status_checked', {
+          scenario_id: currentTransaction,
+          status_result: statusResult
+        });
+        
+      } catch (error) {
+        console.error('Failed to check status:', error);
+        updateStatus('Failed to check status');
+        sendMessageToFlutter('error', {
+          type: 'status_check_failed',
+          error: error.message
+        });
+      }
+    }
+
+    async function completeVerification() {
+      if (!currentTransaction) {
+        alert('No active scenario');
+        return;
+      }
+
+      try {
+        updateStatus('Completing document verification...');
+        
+        const finalResult = await callFlutterApi('complete_document_verification', {
+          scenario_id: currentTransaction
+        });
+        
+        updateStatus('Document verification completed successfully');
+        sendMessageToFlutter('verification_completed', {
+          scenario_id: currentTransaction,
+          final_result: finalResult
+        });
+        
+        // Reset for next verification
+        currentTransaction = null;
+        documentData = null;
+        biometricData = null;
+        
+      } catch (error) {
+        console.error('Failed to complete verification:', error);
+        updateStatus('Failed to complete verification');
+        sendMessageToFlutter('error', {
+          type: 'verification_complete_failed',
+          error: error.message
+        });
+      }
+    }
+
+    // Helper function to call Flutter API methods
+    async function callFlutterApi(method, params) {
+      return new Promise((resolve, reject) => {
+        const requestId = Date.now().toString();
+        
+        // Store the resolve/reject functions
+        window.apiCallbacks = window.apiCallbacks || {};
+        window.apiCallbacks[requestId] = { resolve, reject };
+        
+        // Send request to Flutter
+        sendMessageToFlutter('api_call', {
+          method: method,
+          params: params,
+          request_id: requestId
+        });
+        
+        // Set timeout
+        setTimeout(() => {
+          if (window.apiCallbacks[requestId]) {
+            delete window.apiCallbacks[requestId];
+            reject(new Error('API call timeout'));
+          }
+        }, 30000); // 30 second timeout
+      });
+    }
+
+    // Handle API responses from Flutter
+    window.handleApiResponse = function(requestId, response, error) {
+      if (window.apiCallbacks && window.apiCallbacks[requestId]) {
+        const callback = window.apiCallbacks[requestId];
+        delete window.apiCallbacks[requestId];
+        
+        if (error) {
+          callback.reject(new Error(error));
+        } else {
+          callback.resolve(response);
+        }
+      }
+    };
+
+    // Error handling
+    function onCameraError(error, code) {
+      document.getElementById('acuant-camera').style.display = 'none';
+      document.getElementById('acuant-face-capture-container').style.display = 'none';
+      console.error('Camera error:', error, code);
+      liveCaptureFailed = true;
+
+      const modal = document.getElementById('acuant-modal');
+      const modalText = document.getElementById('acuant-modal-text');
+
+      if (code === AcuantJavascriptWebSdk.REPEAT_FAIL_CODE) {
+        document.getElementById('main-controls').style.display = 'block';
+      } else {
+        modal.style.display = 'block';
+        switch(code) {
+          case AcuantJavascriptWebSdk.SEQUENCE_BREAK_CODE:
+            modalText.innerHTML = "Camera failed. Try manual capture.";
+            break;
+          case AcuantJavascriptWebSdk.START_FAIL_CODE:
+            modalText.innerHTML = "Camera permission required. Try manual capture.";
+            break;
+          default:
+            modalText.innerHTML = "Camera error. Try manual capture.";
+            break;
+        }
+      }
+      
+      sendMessageToFlutter('camera_error', {
+        error: error,
+        code: code
+      });
+    }
+
+    function startManualCapture() {
+      AcuantCamera.startManualCapture(cameraCallback);
+      closeModal();
+    }
+
+    function closeModal() {
+      document.getElementById('acuant-modal').style.display = 'none';
+      document.getElementById('main-controls').style.display = 'block';
+    }
+
+    function unexpectedError(errorMsg) {
+      console.error("Unexpected SDK error:", errorMsg);
+      sendMessageToFlutter('error', {
+        type: 'unexpected_sdk_error',
+        error: errorMsg
+      });
+    }
+
+    function isOldiOS() {
+      let ua = navigator.userAgent;
+      let keyPhrase = "iPhone OS";
+      const keyPhrase2 = "iPad; CPU OS";
+      let index = ua.indexOf(keyPhrase);
+      if (index < 0) {
+        keyPhrase = keyPhrase2;
+        index = ua.indexOf(keyPhrase);
+      }
+      if (index >= 0) {
+        let version = ua.substring(index + keyPhrase.length + 1, index + keyPhrase.length + 3);
+        try {
+          let versionNum = parseInt(version);
+          return versionNum && versionNum < 13;
+        } catch (_) {
+          return false;
+        }
+      }
+      return false;
+    }
+
+    // Modal close handlers
+    document.querySelector('.close').onclick = closeModal;
+    window.onclick = function(event) {
+      const modal = document.getElementById('acuant-modal');
+      if (event.target == modal) {
+        closeModal();
+      }
+    };
+
+    // Configure Acuant SDK path
+    const acuantConfig = {
+      path: "./webSdk/",
+      jpegQuality: 1.0
+    };
+
+    // Clean up on page unload
+    window.onbeforeunload = function(event) {
+      if (typeof AcuantJavascriptWebSdk !== 'undefined') {
+        AcuantJavascriptWebSdk.end();
+      }
+    };
+  </script>
+
+  <!-- Load Acuant SDK Scripts -->
+  <script src="./webSdk/AcuantJavascriptWebSdk.min.js" charset="utf-8"></script>
+  <script async src="./webSdk/AcuantCamera.min.js" charset="utf-8"></script>
+  <script async src="./webSdk/AcuantPassiveLiveness.min.js" charset="utf-8"></script>
+  <script async src="./webSdk/opencv.min.js" charset="utf-8"></script>
+  <script async src="./webSdk/html5-qrcode.min.js"></script>
+  <script async src="./webSdk/imageMagick.umd.js"></script>
+  <script async type="module" src="./webSdk/imageMagick.mjs"></script>
+</body>
+</html> 
